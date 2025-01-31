@@ -27,13 +27,15 @@ const Index = () => {
         <DashboardCard
           title="Receitas (Mês Atual)"
           value="R$ 5.000,00"
-          description="+12% em relação ao mês anterior"
+          description="em relação ao mês anterior"
+          trend={{ value: 12, isPositive: true }}
           className="animate-slideUp [animation-delay:100ms]"
         />
         <DashboardCard
           title="Despesas (Mês Atual)"
           value="R$ 389,90"
-          description="-8% em relação ao mês anterior"
+          description="em relação ao mês anterior"
+          trend={{ value: 8, isPositive: false }}
           className="animate-slideUp [animation-delay:200ms]"
         />
         <ExpenseChart />

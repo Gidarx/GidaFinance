@@ -7,7 +7,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownIcon, ArrowUpIcon, HomeIcon, ZapIcon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ShoppingCartIcon,
+  HomeIcon,
+  BriefcaseIcon,
+  ZapIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const transactions = [
@@ -17,7 +24,7 @@ const transactions = [
     amount: -350.0,
     date: "2024-03-20",
     type: "expense",
-    category: "food",
+    category: "shopping",
   },
   {
     id: 2,
@@ -33,14 +40,18 @@ const transactions = [
     amount: -39.9,
     date: "2024-03-18",
     type: "expense",
-    category: "entertainment",
+    category: "quick",
   },
 ];
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
+    case "shopping":
+      return <ShoppingCartIcon className="h-4 w-4" />;
     case "home":
       return <HomeIcon className="h-4 w-4" />;
+    case "salary":
+      return <BriefcaseIcon className="h-4 w-4" />;
     case "quick":
       return <ZapIcon className="h-4 w-4" />;
     default:
@@ -54,12 +65,12 @@ export function RecentTransactions() {
       <CardHeader>
         <CardTitle>Transações Recentes</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Descrição</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead className="hidden sm:table-cell">Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
             </TableRow>
           </TableHeader>
@@ -77,7 +88,7 @@ export function RecentTransactions() {
                     {transaction.description}
                   </div>
                 </TableCell>
-                <TableCell>{transaction.date}</TableCell>
+                <TableCell className="hidden sm:table-cell">{transaction.date}</TableCell>
                 <TableCell
                   className={cn(
                     "text-right",
