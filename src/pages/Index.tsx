@@ -1,13 +1,40 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
+import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <DashboardLayout>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <TransactionForm />
       </div>
-    </div>
+
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        <DashboardCard
+          title="Saldo Total"
+          value="R$ 4.610,10"
+          description="Atualizado há 2 minutos"
+          className="animate-slideUp"
+        />
+        <DashboardCard
+          title="Receitas (Mês Atual)"
+          value="R$ 5.000,00"
+          description="+12% em relação ao mês anterior"
+          className="animate-slideUp [animation-delay:100ms]"
+        />
+        <DashboardCard
+          title="Despesas (Mês Atual)"
+          value="R$ 389,90"
+          description="-8% em relação ao mês anterior"
+          className="animate-slideUp [animation-delay:200ms]"
+        />
+        <ExpenseChart />
+        <RecentTransactions />
+      </div>
+    </DashboardLayout>
   );
 };
 
