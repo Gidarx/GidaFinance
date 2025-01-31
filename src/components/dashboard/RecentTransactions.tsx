@@ -14,35 +14,25 @@ import {
   HomeIcon,
   BriefcaseIcon,
   ZapIcon,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const transactions = [
-  {
-    id: 1,
-    description: "Supermercado",
-    amount: -350.0,
-    date: "2024-03-20",
-    type: "expense",
-    category: "shopping",
-  },
-  {
-    id: 2,
-    description: "Salário",
-    amount: 5000.0,
-    date: "2024-03-19",
-    type: "income",
-    category: "salary",
-  },
-  {
-    id: 3,
-    description: "Netflix",
-    amount: -39.9,
-    date: "2024-03-18",
-    type: "expense",
-    category: "quick",
-  },
-];
+import { useState } from "react";
+import { Transaction, useTransactions } from "@/hooks/use-transactions";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
@@ -60,6 +50,9 @@ const getCategoryIcon = (category: string) => {
 };
 
 export function RecentTransactions() {
+  const { transactions, deleteTransaction } = useTransactions();
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
   return (
     <Card className="col-span-3 animate-fadeIn">
       <CardHeader>
@@ -72,6 +65,7 @@ export function RecentTransactions() {
               <TableHead>Descrição</TableHead>
               <TableHead className="hidden sm:table-cell">Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,11 +96,51 @@ export function RecentTransactions() {
                     currency: "BRL",
                   })}
                 </TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingTransaction(transaction)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteTransaction(transaction.id)}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
+      {editingTransaction && (
+        <TransactionForm
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+        />
+      )}
     </Card>
   );
 }
