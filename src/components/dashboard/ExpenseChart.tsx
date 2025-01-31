@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const data = [
   { name: "Alimentação", value: 1500 },
@@ -36,6 +36,14 @@ export function ExpenseChart() {
                   />
                 ))}
               </Pie>
+              <Tooltip
+                formatter={(value: number) =>
+                  value.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })
+                }
+              />
               <Legend />
             </PieChart>
           </ResponsiveContainer>

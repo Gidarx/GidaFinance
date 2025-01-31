@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, HomeIcon, ZapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const transactions = [
@@ -17,6 +17,7 @@ const transactions = [
     amount: -350.0,
     date: "2024-03-20",
     type: "expense",
+    category: "food",
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ const transactions = [
     amount: 5000.0,
     date: "2024-03-19",
     type: "income",
+    category: "salary",
   },
   {
     id: 3,
@@ -31,8 +33,20 @@ const transactions = [
     amount: -39.9,
     date: "2024-03-18",
     type: "expense",
+    category: "entertainment",
   },
 ];
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "home":
+      return <HomeIcon className="h-4 w-4" />;
+    case "quick":
+      return <ZapIcon className="h-4 w-4" />;
+    default:
+      return null;
+  }
+};
 
 export function RecentTransactions() {
   return (
@@ -59,6 +73,7 @@ export function RecentTransactions() {
                     ) : (
                       <ArrowUpIcon className="h-4 w-4 text-finance-income" />
                     )}
+                    {getCategoryIcon(transaction.category)}
                     {transaction.description}
                   </div>
                 </TableCell>
