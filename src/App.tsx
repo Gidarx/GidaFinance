@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Transactions from "./pages/Transactions";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
                 </ProtectedRoute>
               }
             />

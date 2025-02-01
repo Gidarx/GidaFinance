@@ -17,7 +17,6 @@ import {
   Pencil,
   Trash2,
   SearchIcon,
-  FilterIcon,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -59,7 +58,11 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-export function RecentTransactions() {
+interface RecentTransactionsProps {
+  fullPage?: boolean;
+}
+
+export function RecentTransactions({ fullPage = false }: RecentTransactionsProps) {
   const { transactions, deleteTransaction } = useTransactions();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,10 +103,10 @@ export function RecentTransactions() {
   });
 
   return (
-    <Card className="col-span-3 animate-fadeIn">
+    <Card className={cn("animate-fadeIn", fullPage ? "" : "col-span-3")}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Transações</CardTitle>
+          <CardTitle>{fullPage ? "Todas as Transações" : "Transações Recentes"}</CardTitle>
           <div className="hidden sm:block">
             <TransactionForm />
           </div>
