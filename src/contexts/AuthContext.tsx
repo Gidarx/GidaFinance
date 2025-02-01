@@ -1,17 +1,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-
-interface User {
-  id: string;
-  email: string;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,35 +18,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("financeAppUser");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error("Failed to parse saved user:", error);
-      }
-    }
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      // In a real app, this would be an API call
-      const savedUser = localStorage.getItem("financeAppUser");
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        if (user.email === email) {
-          setUser(user);
-          localStorage.setItem("financeAppUser", JSON.stringify(user));
-          toast({
-            title: "Login realizado com sucesso!",
-            description: "Bem-vindo de volta.",
-          });
-          navigate("/dashboard");
-          return;
-        }
-      }
-      throw new Error("Credenciais inválidas");
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo de volta.",
+      });
+      
+      navigate("/");
     } catch (error) {
+      console.error("Error logging in:", error);
       toast({
         title: "Erro ao fazer login",
         description: "Credenciais inválidas. Tente novamente.",
@@ -60,19 +60,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      // In a real app, this would be an API call
-      const newUser = {
-        id: crypto.randomUUID(),
+      const { error } = await supabase.auth.signUp({
         email,
-      };
-      setUser(newUser);
-      localStorage.setItem("financeAppUser", JSON.stringify(newUser));
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Registro realizado com sucesso!",
-        description: "Sua conta foi criada.",
+        description: "Verifique seu email para confirmar sua conta.",
       });
-      navigate("/dashboard");
+      
+      navigate("/");
     } catch (error) {
+      console.error("Error registering:", error);
       toast({
         title: "Erro ao criar conta",
         description: "Tente novamente mais tarde.",
@@ -81,14 +83,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("financeAppUser");
-    setUser(null);
-    navigate("/login");
-    toast({
-      title: "Logout realizado",
-      description: "Até logo!",
-    });
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      navigate("/login");
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!",
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
