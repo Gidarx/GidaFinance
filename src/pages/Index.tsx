@@ -5,11 +5,15 @@ import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { useTransactions } from "@/hooks/use-transactions";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const { preferences, isLoading } = useUserPreferences();
+  const { preferences, isLoading: preferencesLoading } = useUserPreferences();
+  const { totals, isLoading: transactionsLoading } = useTransactions();
+
+  const isLoading = preferencesLoading || transactionsLoading;
 
   return (
     <DashboardLayout>
@@ -20,7 +24,7 @@ const Index = () => {
         </div>
       </div>
 
-      {!isLoading && preferences && !preferences.hasCompletedOnboarding && (
+      {!preferencesLoading && preferences && !preferences.hasCompletedOnboarding && (
         <Alert className="mb-6">
           <AlertTitle>Bem-vindo ao FinanceApp! 👋</AlertTitle>
           <AlertDescription>
@@ -33,21 +37,30 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
         <DashboardCard
           title="Saldo Total"
-          value="R$ 0,00"
-          description="Comece adicionando suas transações"
+          value={isLoading ? "Carregando..." : totals.balance.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          })}
+          description="Saldo atual da sua conta"
           className="animate-slideUp"
           hideableValue
         />
         <DashboardCard
           title="Receitas (Mês Atual)"
-          value="R$ 0,00"
-          description="Nenhuma receita registrada"
+          value={isLoading ? "Carregando..." : totals.income.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          })}
+          description="Total de receitas no mês"
           className="animate-slideUp [animation-delay:100ms]"
         />
         <DashboardCard
           title="Despesas (Mês Atual)"
-          value="R$ 0,00"
-          description="Nenhuma despesa registrada"
+          value={isLoading ? "Carregando..." : totals.expenses.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          })}
+          description="Total de despesas no mês"
           className="animate-slideUp [animation-delay:200ms]"
         />
         <ExpenseChart />

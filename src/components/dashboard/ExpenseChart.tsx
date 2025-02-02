@@ -1,16 +1,42 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useTransactions } from "@/hooks/use-transactions";
 
-const data = [
-  { name: "Alimentação", value: 1500 },
-  { name: "Transporte", value: 800 },
-  { name: "Lazer", value: 500 },
-  { name: "Outros", value: 700 },
-];
-
-const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#6B7280"];
+const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#6B7280", "#EC4899", "#8B5CF6", "#EF4444", "#71717A"];
 
 export function ExpenseChart() {
+  const { transactions } = useTransactions();
+
+  // Calculate expenses by category
+  const expensesByCategory = transactions
+    .filter(t => t.type === "expense")
+    .reduce((acc, transaction) => {
+      const category = transaction.category;
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      acc[category] += transaction.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const data = Object.entries(expensesByCategory).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  if (data.length === 0) {
+    return (
+      <Card className="col-span-3 animate-fadeIn">
+        <CardHeader>
+          <CardTitle>Despesas por Categoria</CardTitle>
+        </CardHeader>
+        <CardContent className="pl-2 flex items-center justify-center h-[300px] text-muted-foreground">
+          Nenhuma despesa registrada ainda
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-3 animate-fadeIn">
       <CardHeader>

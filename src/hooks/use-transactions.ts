@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Transaction {
   id: string;
@@ -29,63 +31,171 @@ export const EXPENSE_CATEGORIES = [
   "other_expenses",
 ] as const;
 
-const STORAGE_KEY = "transactions";
-
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    if (!user) {
+      setTransactions([]);
+      setIsLoading(false);
+      return;
+    }
+
+    // Initial fetch
+    async function fetchTransactions() {
       try {
-        setTransactions(JSON.parse(stored));
+        const { data, error } = await supabase
+          .from("Transaction")
+          .select("*")
+          .eq("userId", user.id)
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+        setTransactions(data || []);
       } catch (error) {
-        console.error("Failed to parse stored transactions:", error);
+        console.error("Error fetching transactions:", error);
+        toast({
+          title: "Erro ao carregar transações",
+          description: "Não foi possível carregar suas transações. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, []);
 
-  const saveTransactions = (newTransactions: Transaction[]) => {
-    setTransactions(newTransactions);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newTransactions));
-  };
+    fetchTransactions();
 
-  const addTransaction = (transaction: Omit<Transaction, "id">) => {
-    const newTransaction = {
-      ...transaction,
-      id: crypto.randomUUID(),
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Transaction',
+          filter: `userId=eq.${user.id}`,
+        },
+        async (payload) => {
+          console.log('Real-time update:', payload);
+          // Refresh transactions after any change
+          const { data, error } = await supabase
+            .from("Transaction")
+            .select("*")
+            .eq("userId", user.id)
+            .order("date", { ascending: false });
+
+          if (!error && data) {
+            setTransactions(data);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [user]);
+
+  const addTransaction = async (transaction: Omit<Transaction, "id">) => {
+    if (!user) return;
     
-    saveTransactions([...transactions, newTransaction]);
-    toast({
-      title: "Transação adicionada",
-      description: "A transação foi salva com sucesso!",
-    });
+    try {
+      const { error } = await supabase
+        .from("Transaction")
+        .insert([{ ...transaction, userId: user.id }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transação adicionada",
+        description: "A transação foi salva com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error adding transaction:", error);
+      toast({
+        title: "Erro ao adicionar transação",
+        description: "Não foi possível salvar a transação. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateTransaction = (id: string, data: Partial<Transaction>) => {
-    const updated = transactions.map((t) =>
-      t.id === id ? { ...t, ...data } : t
-    );
-    saveTransactions(updated);
-    toast({
-      title: "Transação atualizada",
-      description: "As alterações foram salvas com sucesso!",
-    });
+  const updateTransaction = async (id: string, data: Partial<Transaction>) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("Transaction")
+        .update(data)
+        .eq("id", id)
+        .eq("userId", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transação atualizada",
+        description: "As alterações foram salvas com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      toast({
+        title: "Erro ao atualizar transação",
+        description: "Não foi possível atualizar a transação. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    saveTransactions(transactions.filter((t) => t.id !== id));
-    toast({
-      title: "Transação excluída",
-      description: "A transação foi removida com sucesso!",
-    });
+  const deleteTransaction = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("Transaction")
+        .delete()
+        .eq("id", id)
+        .eq("userId", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transação excluída",
+        description: "A transação foi removida com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      toast({
+        title: "Erro ao excluir transação",
+        description: "Não foi possível excluir a transação. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Calculate totals
+  const totals = transactions.reduce(
+    (acc, transaction) => {
+      if (transaction.type === "income") {
+        acc.income += transaction.amount;
+      } else {
+        acc.expenses += transaction.amount;
+      }
+      acc.balance = acc.income - acc.expenses;
+      return acc;
+    },
+    { income: 0, expenses: 0, balance: 0 }
+  );
 
   return {
     transactions,
+    isLoading,
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    totals,
   };
 }
