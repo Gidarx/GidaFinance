@@ -23,6 +23,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleReportsClick = () => {
+    if (!user) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Faça login para acessar os relatórios.",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <aside
@@ -50,6 +61,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Link to="/transactions">
               <WalletIcon className="mr-2 h-4 w-4" />
               Transações
+            </Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start" 
+            asChild
+            onClick={handleReportsClick}
+          >
+            <Link to="/reports">
+              <BarChart3Icon className="mr-2 h-4 w-4" />
+              Relatórios
             </Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start" onClick={logout}>
@@ -90,8 +112,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <WalletIcon className="h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <PlusIcon className="h-5 w-5" />
+            <Button variant="ghost" size="icon" asChild onClick={handleReportsClick}>
+              <Link to="/reports">
+                <BarChart3Icon className="h-5 w-5" />
+              </Link>
             </Button>
             <Button variant="ghost" size="icon">
               <Settings2Icon className="h-5 w-5" />
