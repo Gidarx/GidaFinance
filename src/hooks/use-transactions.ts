@@ -10,6 +10,7 @@ export interface Transaction {
   date: string;
   type: "income" | "expense";
   category: string;
+  accountId?: string;
 }
 
 export const INCOME_CATEGORIES = [
@@ -30,6 +31,18 @@ export const EXPENSE_CATEGORIES = [
   "housing",
   "other_expenses",
 ] as const;
+
+// Helper function to transform Supabase transaction type to our app's type
+const transformSupabaseTransaction = (transaction: any): Transaction => ({
+  ...transaction,
+  type: transaction.type.toLowerCase() as "income" | "expense"
+});
+
+// Helper function to transform our app's type to Supabase transaction type
+const transformToSupabaseTransaction = (transaction: Partial<Transaction>) => ({
+  ...transaction,
+  type: transaction.type?.toUpperCase()
+});
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -53,7 +66,7 @@ export function useTransactions() {
           .order("date", { ascending: false });
 
         if (error) throw error;
-        setTransactions(data || []);
+        setTransactions(data ? data.map(transformSupabaseTransaction) : []);
       } catch (error) {
         console.error("Error fetching transactions:", error);
         toast({
@@ -89,7 +102,7 @@ export function useTransactions() {
             .order("date", { ascending: false });
 
           if (!error && data) {
-            setTransactions(data);
+            setTransactions(data.map(transformSupabaseTransaction));
           }
         }
       )
@@ -106,7 +119,14 @@ export function useTransactions() {
     try {
       const { error } = await supabase
         .from("Transaction")
-        .insert([{ ...transaction, userId: user.id }]);
+        .insert([{
+          ...transformToSupabaseTransaction(transaction),
+          userId: user.id,
+          accountId: transaction.accountId || user.id, // Fallback to userId if no accountId
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }]);
 
       if (error) throw error;
 
@@ -130,7 +150,10 @@ export function useTransactions() {
     try {
       const { error } = await supabase
         .from("Transaction")
-        .update(data)
+        .update({
+          ...transformToSupabaseTransaction(data),
+          updatedAt: new Date().toISOString()
+        })
         .eq("id", id)
         .eq("userId", user.id);
 
