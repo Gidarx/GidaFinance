@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "./use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 interface UserPreferences {
   id: string;
@@ -45,9 +46,13 @@ export function useUserPreferences() {
 
         if (!data) {
           console.log("No preferences found, creating defaults...");
+          const now = new Date().toISOString();
           const newPreferences = {
-            ...DEFAULT_PREFERENCES,
+            id: uuidv4(),
             userId: user.id,
+            ...DEFAULT_PREFERENCES,
+            createdAt: now,
+            updatedAt: now,
           };
 
           const { data: insertedData, error: insertError } = await supabase
@@ -87,7 +92,10 @@ export function useUserPreferences() {
       
       const { error } = await supabase
         .from("UserPreferences")
-        .update(updates)
+        .update({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        })
         .eq("userId", user.id);
 
       if (error) throw error;
