@@ -33,7 +33,7 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
     transaction || {
       description: "",
       amount: 0,
-      type: "expense",
+      type: "EXPENSE",
       category: "",
       date: new Date().toISOString().split("T")[0],
     }
@@ -49,7 +49,7 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
       return;
     }
 
-    if (formData.type === "income" && Number(formData.amount) < 0) {
+    if (formData.type === "INCOME" && Number(formData.amount) < 0) {
       toast({
         title: "Valor inválido",
         description: "Receitas não podem ter valores negativos.",
@@ -61,7 +61,7 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
     if (transaction?.id) {
       updateTransaction(transaction.id, formData as Transaction);
     } else {
-      addTransaction(formData as Omit<Transaction, "id">);
+      addTransaction(formData as Omit<Transaction, "id" | "createdAt" | "updatedAt" | "userId">);
     }
 
     setOpen(false);
@@ -115,7 +115,7 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
             <Label htmlFor="type">Tipo</Label>
             <Select
               value={formData.type}
-              onValueChange={(value: "income" | "expense") =>
+              onValueChange={(value: "INCOME" | "EXPENSE") =>
                 setFormData({ ...formData, type: value, category: "" })
               }
             >
@@ -123,8 +123,8 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="income">Receita</SelectItem>
-                <SelectItem value="expense">Despesa</SelectItem>
+                <SelectItem value="INCOME">Receita</SelectItem>
+                <SelectItem value="EXPENSE">Despesa</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -140,7 +140,7 @@ export function TransactionForm({ transaction, onClose }: TransactionFormProps) 
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
               <SelectContent>
-                {(formData.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(
+                {(formData.type === "INCOME" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(
                   (category) => (
                     <SelectItem key={category} value={category}>
                       {category.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}

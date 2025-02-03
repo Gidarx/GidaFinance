@@ -66,7 +66,7 @@ export function RecentTransactions({ fullPage = false }: RecentTransactionsProps
   const { transactions, deleteTransaction } = useTransactions();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "INCOME" | "EXPENSE">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
 
   const filteredTransactions = transactions.filter((transaction) => {
@@ -122,14 +122,14 @@ export function RecentTransactions({ fullPage = false }: RecentTransactionsProps
             />
           </div>
           <div className="flex gap-2">
-            <Select value={typeFilter} onValueChange={(value: "all" | "income" | "expense") => setTypeFilter(value)}>
+            <Select value={typeFilter} onValueChange={(value: "all" | "INCOME" | "EXPENSE") => setTypeFilter(value)}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="income">Receitas</SelectItem>
-                <SelectItem value="expense">Despesas</SelectItem>
+                <SelectItem value="INCOME">Receitas</SelectItem>
+                <SelectItem value="EXPENSE">Despesas</SelectItem>
               </SelectContent>
             </Select>
             <Select value={dateFilter} onValueChange={(value: "all" | "today" | "week" | "month") => setDateFilter(value)}>
@@ -168,7 +168,7 @@ export function RecentTransactions({ fullPage = false }: RecentTransactionsProps
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {transaction.type === "expense" ? (
+                      {transaction.type === "EXPENSE" ? (
                         <ArrowDownIcon className="h-4 w-4 text-finance-expense" />
                       ) : (
                         <ArrowUpIcon className="h-4 w-4 text-finance-income" />
@@ -183,7 +183,7 @@ export function RecentTransactions({ fullPage = false }: RecentTransactionsProps
                   <TableCell
                     className={cn(
                       "text-right",
-                      transaction.type === "expense"
+                      transaction.type === "EXPENSE"
                         ? "text-finance-expense"
                         : "text-finance-income"
                     )}

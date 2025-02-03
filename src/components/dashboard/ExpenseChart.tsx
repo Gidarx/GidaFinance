@@ -9,7 +9,7 @@ export function ExpenseChart() {
 
   // Calculate expenses by category
   const expensesByCategory = transactions
-    .filter(t => t.type === "expense")
+    .filter(t => t.type === "EXPENSE")
     .reduce((acc, transaction) => {
       const category = transaction.category;
       if (!acc[category]) {
