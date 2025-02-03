@@ -20,18 +20,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+        ensureUserExists(session.user);
+      }
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await ensureUserExists(session.user);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const ensureUserExists = async (user: User) => {
+    try {
+      // Primeiro, verifica se o usuário já existe na tabela User
+      const { data: existingUser } = await supabase
+        .from("User")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      // Se o usuário não existir, cria um novo registro
+      if (!existingUser) {
+        const { error: insertError } = await supabase
+          .from("User")
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+            },
+          ]);
+
+        if (insertError) throw insertError;
+        console.log("User created in public.User table");
+      }
+    } catch (error) {
+      console.error("Error ensuring user exists:", error);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -60,12 +96,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        await ensureUserExists(data.user);
+      }
 
       toast({
         title: "Registro realizado com sucesso!",
