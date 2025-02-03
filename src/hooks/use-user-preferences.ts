@@ -12,6 +12,13 @@ interface UserPreferences {
   defaultCategories: string[] | null;
 }
 
+const DEFAULT_PREFERENCES: Omit<UserPreferences, "id" | "userId"> = {
+  currency: "BRL",
+  hasCompletedOnboarding: false,
+  monthlyBudget: null,
+  defaultCategories: ["Alimentação", "Transporte", "Moradia", "Lazer", "Saúde"],
+};
+
 export function useUserPreferences() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,14 +33,37 @@ export function useUserPreferences() {
 
     async function loadPreferences() {
       try {
+        console.log("Loading preferences for user:", user.id);
+        
         const { data, error } = await supabase
           .from("UserPreferences")
           .select("*")
           .eq("userId", user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        setPreferences(data);
+
+        if (!data) {
+          console.log("No preferences found, creating defaults...");
+          const newPreferences = {
+            ...DEFAULT_PREFERENCES,
+            userId: user.id,
+          };
+
+          const { data: insertedData, error: insertError } = await supabase
+            .from("UserPreferences")
+            .insert([newPreferences])
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+
+          console.log("Default preferences created successfully");
+          setPreferences(insertedData);
+        } else {
+          console.log("Existing preferences found");
+          setPreferences(data);
+        }
       } catch (error) {
         console.error("Error loading user preferences:", error);
         toast({
@@ -53,6 +83,8 @@ export function useUserPreferences() {
     if (!user || !preferences) return;
 
     try {
+      console.log("Updating preferences:", updates);
+      
       const { error } = await supabase
         .from("UserPreferences")
         .update(updates)
