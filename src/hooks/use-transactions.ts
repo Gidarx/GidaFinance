@@ -34,14 +34,19 @@ export const EXPENSE_CATEGORIES = [
 
 // Helper function to transform Supabase transaction type to our app's type
 const transformSupabaseTransaction = (transaction: any): Transaction => ({
-  ...transaction,
-  type: transaction.type.toLowerCase() as "income" | "expense"
+  id: transaction.id,
+  description: transaction.description || "",
+  amount: transaction.amount,
+  date: transaction.date,
+  type: transaction.type.toLowerCase() as "income" | "expense",
+  category: transaction.category,
+  accountId: transaction.accountId,
 });
 
 // Helper function to transform our app's type to Supabase transaction type
 const transformToSupabaseTransaction = (transaction: Partial<Transaction>) => ({
   ...transaction,
-  type: transaction.type?.toUpperCase()
+  type: transaction.type?.toUpperCase(),
 });
 
 export function useTransactions() {
@@ -122,7 +127,7 @@ export function useTransactions() {
         .insert([{
           ...transformToSupabaseTransaction(transaction),
           userId: user.id,
-          accountId: transaction.accountId || user.id, // Fallback to userId if no accountId
+          accountId: transaction.accountId || user.id,
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
