@@ -5,12 +5,15 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface Transaction {
   id: string;
-  description: string;
+  description: string | null;
   amount: number;
   date: string;
-  type: "income" | "expense";
+  type: "INCOME" | "EXPENSE";
   category: string;
-  accountId?: string;
+  accountId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const INCOME_CATEGORIES = [
@@ -35,18 +38,15 @@ export const EXPENSE_CATEGORIES = [
 // Helper function to transform Supabase transaction type to our app's type
 const transformSupabaseTransaction = (transaction: any): Transaction => ({
   id: transaction.id,
-  description: transaction.description || "",
+  description: transaction.description,
   amount: transaction.amount,
   date: transaction.date,
-  type: transaction.type.toLowerCase() as "income" | "expense",
+  type: transaction.type as "INCOME" | "EXPENSE",
   category: transaction.category,
   accountId: transaction.accountId,
-});
-
-// Helper function to transform our app's type to Supabase transaction type
-const transformToSupabaseTransaction = (transaction: Partial<Transaction>) => ({
-  ...transaction,
-  type: transaction.type?.toUpperCase(),
+  userId: transaction.userId,
+  createdAt: transaction.createdAt,
+  updatedAt: transaction.updatedAt,
 });
 
 export function useTransactions() {
@@ -61,7 +61,6 @@ export function useTransactions() {
       return;
     }
 
-    // Initial fetch
     async function fetchTransactions() {
       try {
         const { data, error } = await supabase
@@ -97,8 +96,7 @@ export function useTransactions() {
           table: 'Transaction',
           filter: `userId=eq.${user.id}`,
         },
-        async (payload) => {
-          console.log('Real-time update:', payload);
+        async () => {
           // Refresh transactions after any change
           const { data, error } = await supabase
             .from("Transaction")
@@ -118,20 +116,23 @@ export function useTransactions() {
     };
   }, [user]);
 
-  const addTransaction = async (transaction: Omit<Transaction, "id">) => {
+  const addTransaction = async (transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt" | "userId">) => {
     if (!user) return;
     
     try {
+      const newTransaction = {
+        ...transaction,
+        userId: user.id,
+        accountId: transaction.accountId || user.id,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        type: transaction.type.toUpperCase() as "INCOME" | "EXPENSE",
+      };
+
       const { error } = await supabase
         .from("Transaction")
-        .insert([{
-          ...transformToSupabaseTransaction(transaction),
-          userId: user.id,
-          accountId: transaction.accountId || user.id,
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }]);
+        .insert([newTransaction]);
 
       if (error) throw error;
 
@@ -153,12 +154,15 @@ export function useTransactions() {
     if (!user) return;
 
     try {
+      const updates = {
+        ...data,
+        updatedAt: new Date().toISOString(),
+        type: data.type?.toUpperCase() as "INCOME" | "EXPENSE",
+      };
+
       const { error } = await supabase
         .from("Transaction")
-        .update({
-          ...transformToSupabaseTransaction(data),
-          updatedAt: new Date().toISOString()
-        })
+        .update(updates)
         .eq("id", id)
         .eq("userId", user.id);
 
@@ -207,7 +211,7 @@ export function useTransactions() {
   // Calculate totals
   const totals = transactions.reduce(
     (acc, transaction) => {
-      if (transaction.type === "income") {
+      if (transaction.type === "INCOME") {
         acc.income += transaction.amount;
       } else {
         acc.expenses += transaction.amount;
